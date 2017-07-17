@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="utf-8">
+    <title>Name That Artist</title>
+    <style>
+    .painting {
+        border: 1px solid black;
+        max-width: 300px;
+    }
+    
+    .choices ul {
+        display: table;
+    }
+    
+    .choices ul li.row {
+        display: table-row;
+    }
+    
+    .choices ul li.row ul li {
+        display: table-cell;
+    }
+
+    #correct-guesses {
+        float: right;
+        position: absolute;
+        top: 10px;
+        left: 350px;
+    }
+    #find-painting {
+        display: none;
+    }
+    </style>
+</head>
+
+<body>
+    <section class="gallery">
+        <div class="painting-wrapper">
+            <img src="" class="painting">
+        </div>
+    </section>
+    <section class="choices">
+        <div class="choices-wrapper">
+            <div class="choices">
+                <ul>
+                    <li class="row">
+                        <ul>
+                            <li><input type="radio" name="choice" value="A" id="a"><label for="a"></li>
+                            <li><input type="radio" name="choice" value="B" id="b"><label for="b"></li>
+                        </ul>
+                    </li>
+                    <li class="row">
+                        <ul>
+                            <li><input type="radio" name="choice" value="C" id="c"><label for="c"></li>
+                            <li><input type="radio" name="choice" value="D" id="d"><label for="d"></li>
+                        </ul>
+                    </li>
+                </ul>
+                <button id="submit">Submit</button>
+            </div>
+        </div>
+    </section>
+    <form id="painting-form">
+        <!-- This button will trigger our AJAX call -->
+        <input id="find-painting" type="submit" value="start">
+    </form>
+    <div id="correct-guesses">
+        <span>Correct Guesses!</span><br/>
+        <span id="correct-count">0</span>
+    </div>
+    <script src="http://code.jquery.com/jquery-2.1.3.min.js"></script>
+    <script type="text/javascript">
+    // This .on("click") function will trigger the AJAX Call
+    var paintings = ['Vermeer', 'Van Gogh', 'Rembrandt', 'Baburen', 'Both', 'Koninck', 'Rubens', 'Ruisdael', 'Schouten', 'Steen', 'Venne', 'Voogd'];
+    var choiceOptions = [];
+    var subBut = document.querySelector('button#submit');
+    var correct;
+
+    function addToCorrect() {
+        var correctCount = document.querySelector('span#correct-count');
+        var numCorrect = correctCount.textContent;
+        var numNum = parseInt(numCorrect);
+        alert('Correct');
+        correctCount.innerText = numNum+1;
+        $("#find-painting").click();
+    }
+
+    subBut.addEventListener('click', function() {
+        var chosen = document.querySelector('input[name="choice"]:checked');
+        if (chosen.nextElementSibling.children[0].getAttribute('id') == correct) {
+            addToCorrect();
+        } else {
+            alert('Sorry, that was incorrect.');
+            $("#find-painting").click();
+        }
+    });
+
+
+
+    $("#find-painting").on("click", function(event) {
+        // Preventing the submit button from trying to submit the form
+        // We're optionally using a form so the user may hit Enter to search instead of clicking the button
+        event.preventDefault();
+
+        var numnum = Math.floor(Math.random() * 4);
+        var ran2 = Math.floor(Math.random() * numnum);
+        var ran = Math.floor(Math.random() * paintings.length);
+        var mv = document.querySelector('img.painting');
+        var choices = document.querySelectorAll('div.choices ul li.row ul li label');
+        var query;
+        var painting = $("#artist-input").val();
+        var queryURL = "https://www.rijksmuseum.nl/api/en/collection?key=GeKuSgB4&format=json&q=";
+        var prevCorrect = [];
+
+        function showData(d) {
+            mv.setAttribute('src', d);
+        }
+
+        function getPainting(query) {
+            const qu = queryURL + query;
+
+            $.get(qu, function(data) {
+                showData(data.artObjects[0].webImage.url);
+            });
+        }
+
+        function createChoices(c, co) {
+            console.log(choices, c, co);
+            correct = c;
+            choices.forEach(function(item, index) {
+            	console.log(item);
+                item.innerHTML = '<span id="'+ co[index]+'">' + co[index] + '</span>'
+            });
+            getPainting(c);
+        }
+
+        function init() {
+            let numnum = Math.floor(Math.random() * paintings.length);
+            let corr = Math.floor(Math.random() * numnum);
+            let correct = paintings[corr];
+            let choiceOptions = [];
+
+            let runChoices = function(f) {
+
+            	for (let i = 0; i < choices.length - 1; i++) {
+                    
+                    let random = Math.floor(Math.random() * paintings.length);
+
+                    console.log(i, random);
+
+                    if (choiceOptions.indexOf(paintings[random]) === -1) {
+                    	choiceOptions.push(paintings[random]);
+                    } else if (choiceOptions.indexOf(paintings[random + 1]) <= -1 && choiceOptions.indexOf(paintings[random + 1]) != "undefined") {
+                    	choiceOptions.push(paintings[random + 1]);
+                    	console.log(choiceOptions);
+                    } else if (choiceOptions.indexOf(paintings[random - 1]) <= -1 && choiceOptions.indexOf(paintings[random + 1]) != "undefined") {
+                    	choiceOptions.push(paintings[random]);
+                    	console.log(runChoices());
+                    } else {
+                    	console.log('derp');
+                    }
+
+                    if (choiceOptions.length < choices.length) {
+                    	runChoices();
+                    }
+
+                    console.log(choiceOptions.indexOf(paintings[random]));
+
+                    console.log('once');
+                    console.log(choiceOptions);
+                }
+
+            	/*
+            	console.log(choiceOptions);
+                for (let i = 0; i < choices.length - 1; i++) {
+                    
+                    let random = Math.floor(Math.random() * paintings.length);
+
+                    console.log(i, random);
+
+                    console.log(choiceOptions.indexOf(paintings[random]));
+
+                    if (choiceOptions.indexOf(paintings[random]) < 0 && paintings[random] != correct && prevCorrect.indexOf(paintings[random]) < 0) {
+                        choiceOptions.push(paintings[random]); //textContent = paintings[index+ran2];
+                        prevCorrect.push(paintings[random]); //textContent = paintings[index+ran2];
+                    } else if (choiceOptions.indexOf(paintings[random]) < 0 && paintings[random] != correct) {
+                        choiceOptions.push(paintings[random]); //textContent = paintings[index+ran2];
+                    } else if (f === 'force') {
+                        for (let i = 0; i < paintings.length; i++) {
+                            if (choiceOptions.indexOf(paintings[i]) < 0) {
+                                choiceOptions.push(paintings[i]);
+                            }
+
+                            if (choiceOptions.length < choices.length) {
+                                runChoices(force);
+                                console.log('derp');
+                            }
+                        }
+                    }
+                    console.log('once');
+                }*/
+
+            }
+
+            //choiceOptions = [];
+
+            runChoices();
+
+            prevCorrect.forEach(function(item, index) {
+                if (correct != item) {
+                    choiceOptions.splice(numnum, 0, correct);
+                } else {
+                    //runChoices(force);
+                }
+            });
+
+            if (choiceOptions.length < choices.length) {
+            } else {
+            	choiceOptions.splice(numnum, 0, correct);
+                createChoices(correct, choiceOptions);
+            }
+    	}
+
+    	init();
+
+    });
+
+    $("#find-painting").click();
+
+    </script>
+</body>
+
+</html>
